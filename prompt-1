@@ -1,0 +1,154 @@
+You are a senior machine learning engineer and technical writer.
+
+I have designed a heuristic to calibrate confidence scores from a black-box model, and I want to generate high-quality internal documentation for my engineering team.
+
+Your task is to write a clear, structured, and technically sound explanation of the heuristic, including intuition, reasoning, and supporting concepts from machine learning, statistics, and uncertainty modeling.
+
+---
+
+## Context
+
+* The model is a black-box API.
+
+* It operates on tabular data with multiple columns.
+
+* Some columns have very high cardinality (large number of possible values).
+
+* The model returns only:
+
+  * a predicted value per cell
+  * a single confidence score (no probability distribution)
+
+* The system performs reverse prediction:
+
+  * some columns are masked
+  * the model reconstructs them
+
+---
+
+## Problem
+
+Raw confidence scores are not reliable because:
+
+1. **High cardinality effect**
+
+   * The model must distribute probability mass across many possible values.
+   * This leads to artificially low confidence for high-cardinality columns.
+
+2. **Lack of uncertainty modeling**
+
+   * We do not have access to full probability distributions (no entropy).
+
+3. **Context dependence**
+
+   * Predictions depend heavily on context rows (historical data).
+   * Raw confidence ignores whether the prediction is supported by context.
+
+---
+
+## Goal
+
+We want to approximate a more meaningful confidence score:
+
+> A confidence that reflects what the model would output if uncertainty and difficulty were properly accounted for.
+
+---
+
+## Heuristic
+
+We define:
+
+* K = number of unique values (cardinality) of the column
+* K_ref = a reference cardinality used for scaling
+* support = frequency of the predicted value in context rows (with small smoothing if 0)
+
+The heuristic is:
+
+uncertainty = 1 - confidence × (log(K) / log(K_ref)) × (1 - support)
+improved_confidence = 1 - uncertainty
+
+---
+
+## What to include in the documentation
+
+Please structure the output with clear sections and headings.
+
+### 1. Problem Overview
+
+Explain why raw confidence is unreliable.
+
+### 2. Key Intuition
+
+Explain:
+
+* probability mass spreading across many classes
+* why high-cardinality leads to lower confidence
+* why a confidence like 0.2 means different things depending on K
+* the concept of random baseline (1/K)
+
+### 3. Heuristic Breakdown
+
+Explain each term clearly:
+
+* confidence
+* log(K)/log(K_ref)
+* support
+* why smoothing is needed when support = 0
+
+### 4. Conceptual Interpretation
+
+Explain the formula as:
+
+* confidence × difficulty × context adjustment
+* connect to:
+
+  * information theory (log(K))
+  * Bayesian intuition (prior, likelihood, evidence)
+  * uncertainty modeling
+
+### 5. Why log(K)?
+
+Explain why difficulty grows logarithmically, not linearly.
+
+### 6. Why normalization is needed
+
+Explain why using log(K) directly can explode values and why scaling is required.
+
+### 7. Practical Behavior
+
+Describe how the heuristic behaves in:
+
+* low cardinality columns
+* high cardinality columns
+* high vs low support cases
+
+### 8. Advantages
+
+* works without training
+* improves comparability across columns
+* incorporates context
+* simple and deterministic
+
+### 9. Limitations
+
+* not a true probabilistic calibration
+* depends on quality of context data
+* approximation due to lack of full distribution
+
+### 10. Summary
+
+Provide a concise takeaway.
+
+---
+
+## Style Requirements
+
+* Clear, professional, and concise
+* Suitable for engineers (not overly academic, but technically correct)
+* Use intuitive examples where helpful
+* Avoid unnecessary jargon
+* Make it easy to understand *why* the heuristic works
+
+---
+
+Generate the final documentation.
